@@ -47,21 +47,45 @@ resource "aws_route_table_association" "dev_public_route_table_association" {
 }
 
 resource "aws_security_group" "dev_security_group" {
-  name = "dev_security_group"
+  name        = "dev_security_group"
   description = "Security group for dev environment"
-  vpc_id = aws_vpc.dev_vpc.id
+  vpc_id      = aws_vpc.dev_vpc.id
 
   ingress {
-    from_port = 0
-    to_port   = 0
-    protocol  = "-1"
-    cidr_blocks = [ "0.0.0.0/0" ]
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
-    from_port = 0
-    to_port   = 0
-    protocol  = "-1"
-    cidr_blocks = [ "0.0.0.0/0" ]
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_key_pair" "dev_key" {
+  key_name   = "devkey"
+  public_key = file("~/.ssh/devkey.pub")
+}
+
+resource "aws_instance" "dev_instance" {
+  instance_type          = "t2.micro"
+  subnet_id              = aws_subnet.dev_public_subnet.id
+  ami                    = data.aws_ami.dev_server_ami.id
+  key_name               = aws_key_pair.dev_key.key_name
+  vpc_security_group_ids = [aws_security_group.dev_security_group.id]
+  user_data = file("userscript.tpl")
+
+  tags = {
+    Name = "dev-instance"
+  }
+
+  root_block_device {
+    volume_size           = 10
+    volume_type           = "gp2"
+    delete_on_termination = true
   }
 }
