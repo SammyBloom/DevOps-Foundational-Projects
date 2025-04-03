@@ -88,4 +88,13 @@ resource "aws_instance" "dev_instance" {
     volume_type           = "gp2"
     delete_on_termination = true
   }
+
+  provisioner "local-exec" {
+    command = templatefile("linux-ssh-config.tpl", {
+      host = self.public_ip,
+      user = "ubuntu",
+      identityfile = "~/.ssh/devkey"
+    })
+    interpreter = [ "bash", "-c" ]
+  }
 }
